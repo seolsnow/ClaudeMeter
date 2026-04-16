@@ -17,13 +17,9 @@ A macOS menu bar app that shows your Claude session (5h) and weekly (7d) usage a
 
 ## Screenshot
 
-```
-5h [████░░] 11%    7d [█░░░░░] 5%     ← menu bar
-```
+<img src="docs/screenshot.png" alt="ClaudeMeter menu bar and detail panel" width="420">
 
-Click to expand:
-- Session (5h): **11%** — Resets at 4/16 18:00
-- Weekly (7d): **5%** — Resets at 4/23 10:00
+Menu bar shows colored progress bars with percentages; click to expand the panel with session/weekly details, per-section visibility toggles, and login management.
 
 ## Requirements
 
