@@ -30,16 +30,16 @@ Click to expand:
 - macOS 14 (Sonoma) or later
 - Xcode 15+
 
+## Is It Safe?
+
+This is a fully open-source project — every line of code is visible in this repo. Don't take our word for it: **ask Claude, ChatGPT, or any AI you trust** to review the source code and confirm there's nothing malicious. The app only communicates with `claude.ai` (your existing account), stores all data locally, and includes zero analytics or telemetry.
+
 ## Install
 
 ### Option 1: Download (recommended)
 
 1. Download `ClaudeMeter.zip` from the [latest release](https://github.com/seolsnow/ClaudeMeter/releases/latest)
 2. Unzip and drag `ClaudeMeter.app` to `/Applications`
-3. On first launch, macOS will show a security warning — this is normal for open-source apps without Apple Developer signing ($99/yr). To open:
-   - **macOS Sequoia (15+):** System Settings → Privacy & Security → scroll down → click **"Open Anyway"** next to ClaudeMeter
-   - **macOS Sonoma (14):** System Settings → Privacy & Security → click **"Open Anyway"**
-   - Or: right-click the app → **Open** → click **Open** in the dialog
 
 ### Option 2: Homebrew
 
@@ -55,6 +55,14 @@ git clone https://github.com/seolsnow/ClaudeMeter.git
 cd ClaudeMeter
 make install
 ```
+
+### macOS Security Warning
+
+On first launch, macOS will show a security warning — this is normal for open-source apps without Apple Developer signing ($99/yr). To open:
+
+- **macOS Sequoia (15+):** System Settings → Privacy & Security → scroll down → click **"Open Anyway"** next to ClaudeMeter
+- **macOS Sonoma (14):** System Settings → Privacy & Security → click **"Open Anyway"**
+- Or: right-click the app → **Open** → click **Open** in the dialog
 
 ## Setup
 

@@ -100,7 +100,7 @@ struct DetailPanelView: View {
             }
 
             HStack {
-                Toggle("Login 시 시작", isOn: $launchAtLogin)
+                Toggle("Launch at Login", isOn: $launchAtLogin)
                     .toggleStyle(.checkbox)
                     .font(.caption)
                     .onChange(of: launchAtLogin) { _, val in settings.setLaunchAtLogin(val) }
