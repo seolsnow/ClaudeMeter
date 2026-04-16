@@ -1,0 +1,56 @@
+name: ClaudeMeter
+options:
+  bundleIdPrefix: com.devsisters.claudemeter
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"
+    ENABLE_HARDENED_RUNTIME: YES
+    SWIFT_STRICT_CONCURRENCY: minimal
+
+targets:
+  ClaudeMeter:
+    type: application
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Sources/ClaudeMeter
+        excludes:
+          - "Resources/AppIcon.iconset/**"
+          - "Resources/AppIcon_preview.png"
+    dependencies:
+      - sdk: WebKit.framework
+    info:
+      path: Sources/ClaudeMeter/Info.plist
+      properties:
+        LSUIElement: true
+        CFBundleDisplayName: ClaudeMeter
+        CFBundleIdentifier: com.devsisters.claudemeter
+        CFBundleIconFile: AppIcon
+        NSHumanReadableCopyright: ""
+    settings:
+      base:
+        PRODUCT_NAME: ClaudeMeter
+        GENERATE_INFOPLIST_FILE: NO
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  ClaudeMeterTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: Tests/ClaudeMeterTests
+    dependencies:
+      - target: ClaudeMeter
+    settings:
+      base:
+        BUNDLE_LOADER: $(TEST_HOST)
+        TEST_HOST: $(BUILT_PRODUCTS_DIR)/ClaudeMeter.app/Contents/MacOS/ClaudeMeter
+        GENERATE_INFOPLIST_FILE: YES
