@@ -4,6 +4,8 @@ import AppKit
 /// Menu bar label rendered as a custom NSImage (isTemplate=false) so colors show.
 struct MenuBarLabel: View {
     let snapshot: UsageSnapshot
+    let showSession: Bool
+    let showWeekly: Bool
 
     var body: some View {
         Image(nsImage: renderImage())
@@ -16,22 +18,42 @@ struct MenuBarLabel: View {
         let spacing: CGFloat = 3
         let textFont = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .medium)
         let labelFont = NSFont.systemFont(ofSize: 9, weight: .semibold)
-
-        let sText = formatPercent(snapshot.sessionPercent)
-        let wText = formatPercent(snapshot.weeklyPercent)
-        let sLabel = "5h"
-        let wLabel = "7d"
-
-        let sLabelWidth = (sLabel as NSString).size(withAttributes: [.font: labelFont]).width
-        let wLabelWidth = (wLabel as NSString).size(withAttributes: [.font: labelFont]).width
-        let sTextWidth = (sText as NSString).size(withAttributes: [.font: textFont]).width
-        let wTextWidth = (wText as NSString).size(withAttributes: [.font: textFont]).width
-
-        let sBlockWidth = sLabelWidth + spacing + barWidth + spacing + sTextWidth
-        let wBlockWidth = wLabelWidth + spacing + barWidth + spacing + wTextWidth
         let gapBetween: CGFloat = 8
-        let totalWidth = sBlockWidth + gapBetween + wBlockWidth
         let height: CGFloat = 18
+
+        struct Block {
+            let label: String
+            let percent: Double
+            let labelWidth: CGFloat
+            let textWidth: CGFloat
+            let totalWidth: CGFloat
+        }
+
+        var blocks: [Block] = []
+
+        if showSession {
+            let label = "5h"
+            let text = formatPercent(snapshot.sessionPercent)
+            let lw = (label as NSString).size(withAttributes: [.font: labelFont]).width
+            let tw = (text as NSString).size(withAttributes: [.font: textFont]).width
+            blocks.append(Block(label: label, percent: snapshot.sessionPercent, labelWidth: lw, textWidth: tw, totalWidth: lw + spacing + barWidth + spacing + tw))
+        }
+
+        if showWeekly {
+            let label = "7d"
+            let text = formatPercent(snapshot.weeklyPercent)
+            let lw = (label as NSString).size(withAttributes: [.font: labelFont]).width
+            let tw = (text as NSString).size(withAttributes: [.font: textFont]).width
+            blocks.append(Block(label: label, percent: snapshot.weeklyPercent, labelWidth: lw, textWidth: tw, totalWidth: lw + spacing + barWidth + spacing + tw))
+        }
+
+        if blocks.isEmpty {
+            let fallback = NSImage(size: NSSize(width: 1, height: height), flipped: true) { _ in true }
+            fallback.isTemplate = false
+            return fallback
+        }
+
+        let totalWidth = blocks.map(\.totalWidth).reduce(0, +) + gapBetween * CGFloat(blocks.count - 1)
 
         let image = NSImage(size: NSSize(width: totalWidth, height: height), flipped: true) { rect in
             let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
@@ -41,31 +63,23 @@ struct MenuBarLabel: View {
             let centerY = rect.height / 2
             let barY = centerY - barHeight / 2
 
-            // Session block
             var x: CGFloat = 0
-            (sLabel as NSString).draw(at: NSPoint(x: x, y: centerY - labelFont.pointSize / 2 - 1),
-                                       withAttributes: [.font: labelFont, .foregroundColor: textColor.withAlphaComponent(0.6)])
-            x += sLabelWidth + spacing
+            for (i, block) in blocks.enumerated() {
+                if i > 0 { x += gapBetween }
 
-            drawBar(at: NSPoint(x: x, y: barY), width: barWidth, height: barHeight, radius: barRadius,
-                    fill: snapshot.sessionPercent, bgColor: bgColor, fillColor: colorFor(snapshot.sessionPercent))
-            x += barWidth + spacing
+                (block.label as NSString).draw(at: NSPoint(x: x, y: centerY - labelFont.pointSize / 2 - 1),
+                                               withAttributes: [.font: labelFont, .foregroundColor: textColor.withAlphaComponent(0.6)])
+                x += block.labelWidth + spacing
 
-            (sText as NSString).draw(at: NSPoint(x: x, y: centerY - textFont.pointSize / 2 - 1),
-                                      withAttributes: [.font: textFont, .foregroundColor: textColor])
-            x += sTextWidth + gapBetween
+                self.drawBar(at: NSPoint(x: x, y: barY), width: barWidth, height: barHeight, radius: barRadius,
+                        fill: block.percent, bgColor: bgColor, fillColor: self.colorFor(block.percent))
+                x += barWidth + spacing
 
-            // Weekly block
-            (wLabel as NSString).draw(at: NSPoint(x: x, y: centerY - labelFont.pointSize / 2 - 1),
-                                       withAttributes: [.font: labelFont, .foregroundColor: textColor.withAlphaComponent(0.6)])
-            x += wLabelWidth + spacing
-
-            drawBar(at: NSPoint(x: x, y: barY), width: barWidth, height: barHeight, radius: barRadius,
-                    fill: snapshot.weeklyPercent, bgColor: bgColor, fillColor: colorFor(snapshot.weeklyPercent))
-            x += barWidth + spacing
-
-            (wText as NSString).draw(at: NSPoint(x: x, y: centerY - textFont.pointSize / 2 - 1),
-                                      withAttributes: [.font: textFont, .foregroundColor: textColor])
+                let text = self.formatPercent(block.percent)
+                (text as NSString).draw(at: NSPoint(x: x, y: centerY - textFont.pointSize / 2 - 1),
+                                        withAttributes: [.font: textFont, .foregroundColor: textColor])
+                x += block.textWidth
+            }
             return true
         }
         image.isTemplate = false

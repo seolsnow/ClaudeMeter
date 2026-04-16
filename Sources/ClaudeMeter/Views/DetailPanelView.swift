@@ -8,6 +8,8 @@ struct DetailPanelView: View {
 
     @State private var nowTick: Date = Date()
     @State private var launchAtLogin: Bool = false
+    @AppStorage("showSessionInMenuBar") private var showSession: Bool = true
+    @AppStorage("showWeeklyInMenuBar") private var showWeekly: Bool = true
     private let tickTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -50,7 +52,14 @@ struct DetailPanelView: View {
 
     private var sessionSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Session (5h)").font(.caption).foregroundStyle(.secondary)
+            HStack {
+                Text("Session (5h)").font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Toggle("Menu Bar", isOn: $showSession)
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .font(.caption2)
+            }
             HStack(alignment: .firstTextBaseline) {
                 Text("\(percentInt(store.snapshot.sessionPercent))%")
                     .font(.system(size: 28, weight: .semibold)).monospacedDigit()
@@ -67,7 +76,14 @@ struct DetailPanelView: View {
 
     private var weeklySection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Weekly (7d)").font(.caption).foregroundStyle(.secondary)
+            HStack {
+                Text("Weekly (7d)").font(.caption).foregroundStyle(.secondary)
+                Spacer()
+                Toggle("Menu Bar", isOn: $showWeekly)
+                    .toggleStyle(.switch)
+                    .controlSize(.mini)
+                    .font(.caption2)
+            }
             HStack(alignment: .firstTextBaseline) {
                 Text("\(percentInt(store.snapshot.weeklyPercent))%")
                     .font(.system(size: 28, weight: .semibold)).monospacedDigit()
