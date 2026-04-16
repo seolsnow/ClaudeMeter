@@ -53,9 +53,13 @@ struct LoginWebView: NSViewRepresentable {
             let path = url.path
             let authPaths = ["/login", "/signup", "/oauth", "/auth", "/verify"]
             let isOnAuthPage = authPaths.contains(where: { path.hasPrefix($0) })
-            guard !isOnAuthPage else { return }
 
-            syncCookiesAndComplete()
+            if isOnAuthPage {
+                // Login page loaded — start polling for login completion
+                startPollingForLogin()
+            } else {
+                syncCookiesAndComplete()
+            }
         }
 
         // MARK: - WKUIDelegate (handle OAuth popups)
@@ -90,28 +94,23 @@ struct LoginWebView: NSViewRepresentable {
             return popup
         }
 
-        /// Called when the popup calls window.close() — clean up and poll main webview.
+        /// Called when the popup calls window.close() — clean up.
         func webViewDidClose(_ webView: WKWebView) {
             if webView === popupWebView {
                 popupWindow?.close()
                 popupWindow = nil
                 popupWebView = nil
-                startPollingForLogin()
             }
         }
 
-        /// After OAuth popup closes, the main page may SPA-navigate
-        /// to a logged-in page without triggering didFinish.
-        /// Poll every 0.5s for up to 10s to detect it.
+        /// Poll main webview URL continuously until login is detected.
         private func startPollingForLogin() {
-            var attempts = 0
-            pollTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            guard pollTimer == nil else { return }
+            pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
                 guard let self, !self.didComplete, let webView = self.mainWebView else {
                     self?.pollTimer?.invalidate()
                     return
                 }
-                attempts += 1
-                if attempts > 20 { self.pollTimer?.invalidate(); return }
 
                 webView.evaluateJavaScript("window.location.href") { result, _ in
                     guard let urlString = result as? String,
@@ -121,6 +120,9 @@ struct LoginWebView: NSViewRepresentable {
                     let isAuth = authPaths.contains(where: { url.path.hasPrefix($0) })
                     if !isAuth {
                         self.pollTimer?.invalidate()
+                        self.popupWindow?.close()
+                        self.popupWindow = nil
+                        self.popupWebView = nil
                         self.syncCookiesAndComplete()
                     }
                 }
@@ -132,6 +134,7 @@ struct LoginWebView: NSViewRepresentable {
         func syncCookiesAndComplete() {
             guard !didComplete else { return }
             didComplete = true
+            pollTimer?.invalidate()
 
             WKWebsiteDataStore.default().httpCookieStore.getAllCookies { cookies in
                 let claudeCookies = cookies.filter { $0.domain.contains("claude.ai") }

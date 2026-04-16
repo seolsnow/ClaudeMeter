@@ -26,6 +26,11 @@ struct UsageWindow: Codable {
     }
 }
 
+enum APIError: Error, Equatable {
+    case sessionInvalid
+    case httpError(Int)
+}
+
 final class ClaudeAPIClient: @unchecked Sendable {
     private let baseURL = "https://claude.ai"
     private let session: URLSession
@@ -48,11 +53,19 @@ final class ClaudeAPIClient: @unchecked Sendable {
         return request
     }
 
+    private func checkedData(for request: URLRequest) async throws -> Data {
+        let (data, response) = try await session.data(for: request)
+        if let http = response as? HTTPURLResponse, http.statusCode == 401 || http.statusCode == 403 {
+            throw APIError.sessionInvalid
+        }
+        return data
+    }
+
     func fetchOrganizations() async throws -> [Organization] {
         guard let url = URL(string: "\(baseURL)/api/organizations") else {
             throw URLError(.badURL)
         }
-        let (data, _) = try await session.data(for: apiRequest(url: url))
+        let data = try await checkedData(for: apiRequest(url: url))
         return try JSONDecoder().decode([Organization].self, from: data)
     }
 
@@ -60,7 +73,7 @@ final class ClaudeAPIClient: @unchecked Sendable {
         guard let url = URL(string: "\(baseURL)/api/organizations/\(orgId)/usage") else {
             throw URLError(.badURL)
         }
-        let (data, _) = try await session.data(for: apiRequest(url: url))
+        let data = try await checkedData(for: apiRequest(url: url))
         return try JSONDecoder().decode(UsageResponse.self, from: data)
     }
 }

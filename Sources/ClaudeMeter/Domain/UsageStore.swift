@@ -40,8 +40,24 @@ final class UsageStore {
     }
 
     func refresh() async {
-        // fetchOrganizations doubles as a login check — reuse the result
-        guard let orgs = try? await api.fetchOrganizations(), !orgs.isEmpty else {
+        let orgsResult: [Organization]
+        do {
+            orgsResult = try await api.fetchOrganizations()
+        } catch {
+            let isAuthError = error is DecodingError || (error as? APIError) == .sessionInvalid
+            if isAuthError || !snapshot.isLoggedIn {
+                orgId = nil
+                UserDefaults.standard.removeObject(forKey: "selectedOrgId")
+                snapshot = UsageSnapshot(
+                    sessionPercent: 0, sessionResetAt: nil,
+                    weeklyPercent: 0, weeklyResetAt: nil,
+                    isLoading: false, isLoggedIn: false
+                )
+            }
+            return
+        }
+
+        guard !orgsResult.isEmpty else {
             snapshot = UsageSnapshot(
                 sessionPercent: 0, sessionResetAt: nil,
                 weeklyPercent: 0, weeklyResetAt: nil,
@@ -50,8 +66,12 @@ final class UsageStore {
             return
         }
 
-        if organizations.isEmpty {
-            organizations = orgs
+        organizations = orgsResult
+
+        // Reset saved orgId if it no longer belongs to current account
+        if let saved = orgId, !orgsResult.contains(where: { $0.uuid == saved }) {
+            orgId = nil
+            UserDefaults.standard.removeObject(forKey: "selectedOrgId")
         }
 
         // Auto-select org: try each until one returns actual usage data
