@@ -32,14 +32,27 @@ struct LoginWebView: NSViewRepresentable {
         private var popupWindow: NSWindow?
         private var popupWebView: WKWebView?
         private weak var mainWebView: WKWebView?
-        private var pollTimer: Timer?
+        private var urlObservation: NSKeyValueObservation?
+
+        private static let authPaths = ["/login", "/signup", "/oauth", "/auth", "/verify"]
 
         init(onLoginComplete: @escaping () -> Void) {
             self.onLoginComplete = onLoginComplete
         }
 
+        deinit {
+            urlObservation?.invalidate()
+        }
+
         func setMainWebView(_ webView: WKWebView) {
             self.mainWebView = webView
+            // Observe URL changes so SPA pushState/replaceState transitions
+            // are detected without polling.
+            urlObservation = webView.observe(\.url, options: [.new]) { [weak self] _, change in
+                guard let self, !self.didComplete else { return }
+                guard let newURL = change.newValue ?? nil else { return }
+                self.handleNavigation(to: newURL)
+            }
         }
 
         // MARK: - WKNavigationDelegate
@@ -47,17 +60,13 @@ struct LoginWebView: NSViewRepresentable {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             guard !didComplete else { return }
             guard let url = webView.url else { return }
-            let host = url.host ?? ""
-            guard host == "claude.ai" else { return }
+            handleNavigation(to: url)
+        }
 
-            let path = url.path
-            let authPaths = ["/login", "/signup", "/oauth", "/auth", "/verify"]
-            let isOnAuthPage = authPaths.contains(where: { path.hasPrefix($0) })
-
-            if isOnAuthPage {
-                // Login page loaded — start polling for login completion
-                startPollingForLogin()
-            } else {
+        private func handleNavigation(to url: URL) {
+            guard url.host == "claude.ai" else { return }
+            let isOnAuthPage = Self.authPaths.contains(where: { url.path.hasPrefix($0) })
+            if !isOnAuthPage {
                 syncCookiesAndComplete()
             }
         }
@@ -103,38 +112,16 @@ struct LoginWebView: NSViewRepresentable {
             }
         }
 
-        /// Poll main webview URL continuously until login is detected.
-        private func startPollingForLogin() {
-            guard pollTimer == nil else { return }
-            pollTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
-                guard let self, !self.didComplete, let webView = self.mainWebView else {
-                    self?.pollTimer?.invalidate()
-                    return
-                }
-
-                webView.evaluateJavaScript("window.location.href") { result, _ in
-                    guard let urlString = result as? String,
-                          let url = URL(string: urlString),
-                          url.host == "claude.ai" else { return }
-                    let authPaths = ["/login", "/signup", "/oauth", "/auth", "/verify"]
-                    let isAuth = authPaths.contains(where: { url.path.hasPrefix($0) })
-                    if !isAuth {
-                        self.pollTimer?.invalidate()
-                        self.popupWindow?.close()
-                        self.popupWindow = nil
-                        self.popupWebView = nil
-                        self.syncCookiesAndComplete()
-                    }
-                }
-            }
-        }
-
         // MARK: - Cookie sync
 
         func syncCookiesAndComplete() {
             guard !didComplete else { return }
             didComplete = true
-            pollTimer?.invalidate()
+            urlObservation?.invalidate()
+            urlObservation = nil
+            popupWindow?.close()
+            popupWindow = nil
+            popupWebView = nil
 
             WKWebsiteDataStore.default().httpCookieStore.getAllCookies { cookies in
                 let claudeCookies = cookies.filter { $0.domain.contains("claude.ai") }

@@ -22,6 +22,9 @@ struct DetailPanelView: View {
                 Divider()
                 weeklySection
                 Divider()
+                if let errorMessage = store.snapshot.errorMessage {
+                    errorBanner(errorMessage)
+                }
             }
             footerSection
         }
@@ -98,6 +101,18 @@ struct DetailPanelView: View {
         }
     }
 
+    private func errorBanner(_ message: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+                .font(.caption)
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+    }
+
     private var footerSection: some View {
         VStack(spacing: 8) {
             // Org picker (compact)
@@ -132,6 +147,10 @@ struct DetailPanelView: View {
             HStack {
                 Button("Refresh") { Task { await store.refresh() } }
                 Spacer()
+                Text("ClaudeMeter")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Spacer()
                 Button("Quit", action: onQuit)
             }
         }
@@ -141,13 +160,17 @@ struct DetailPanelView: View {
 
     private func percentInt(_ p: Double) -> Int { Int((p * 100).rounded()) }
 
+    private static let resetFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "M/d HH:mm"
+        return f
+    }()
+
     private func resetText(_ resetAt: Date?) -> String {
         guard let resetAt else { return "No reset time available." }
         let remaining = resetAt.timeIntervalSince(nowTick)
         if remaining <= 0 { return "Resetting now." }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "M/d HH:mm"
-        return "Resets at \(formatter.string(from: resetAt))"
+        return "Resets at \(Self.resetFormatter.string(from: resetAt))"
     }
 
     private func logOut() {

@@ -53,6 +53,17 @@ final class UsageStore {
                     weeklyPercent: 0, weeklyResetAt: nil,
                     isLoading: false, isLoggedIn: false
                 )
+            } else {
+                // Network/server failure while logged in — keep stale data, surface error.
+                snapshot = UsageSnapshot(
+                    sessionPercent: snapshot.sessionPercent,
+                    sessionResetAt: snapshot.sessionResetAt,
+                    weeklyPercent: snapshot.weeklyPercent,
+                    weeklyResetAt: snapshot.weeklyResetAt,
+                    isLoading: false,
+                    isLoggedIn: true,
+                    errorMessage: Self.describe(error)
+                )
             }
             return
         }
@@ -116,9 +127,26 @@ final class UsageStore {
                 weeklyPercent: snapshot.weeklyPercent,
                 weeklyResetAt: snapshot.weeklyResetAt,
                 isLoading: false,
-                isLoggedIn: true
+                isLoggedIn: true,
+                errorMessage: Self.describe(error)
             )
         }
+    }
+
+    private static func describe(_ error: Error) -> String {
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet, .networkConnectionLost:
+                return "No internet connection."
+            case .timedOut:
+                return "Request timed out."
+            case .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed:
+                return "Can't reach Claude.ai."
+            default:
+                return "Network error."
+            }
+        }
+        return "Couldn't load usage."
     }
 
     func setOrganization(_ newOrgId: String) {

@@ -48,9 +48,24 @@ struct MenuBarLabel: View {
         }
 
         if blocks.isEmpty {
-            let fallback = NSImage(size: NSSize(width: 1, height: height), flipped: true) { _ in true }
-            fallback.isTemplate = false
-            return fallback
+            let iconSize: CGFloat = 22    // fill available menu bar height
+            let cropScale: CGFloat = 1.45 // zoom to crop the rounded-rect padding
+            let icon = NSApp.applicationIconImage
+                ?? NSImage(named: NSImage.applicationIconName)
+                ?? NSWorkspace.shared.icon(forFile: Bundle.main.bundlePath)
+            let drawSize = iconSize * cropScale
+            let offset = (drawSize - iconSize) / 2
+            let resized = NSImage(size: NSSize(width: iconSize, height: iconSize))
+            resized.lockFocus()
+            icon.draw(
+                in: NSRect(x: -offset, y: -offset, width: drawSize, height: drawSize),
+                from: .zero,
+                operation: .sourceOver,
+                fraction: 1.0
+            )
+            resized.unlockFocus()
+            resized.isTemplate = false
+            return resized
         }
 
         let totalWidth = blocks.map(\.totalWidth).reduce(0, +) + gapBetween * CGFloat(blocks.count - 1)
