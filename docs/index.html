@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClaudeMeter — Claude.ai Usage in Your Menu Bar</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #e5e5e5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hero {
+      text-align: center;
+      padding: 80px 24px 40px;
+      max-width: 640px;
+    }
+
+    .hero h1 {
+      font-size: 48px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 16px;
+      letter-spacing: -1px;
+    }
+
+    .hero p {
+      font-size: 20px;
+      color: #999;
+      line-height: 1.5;
+      margin-bottom: 40px;
+    }
+
+    .download-btn {
+      display: inline-block;
+      background: #fff;
+      color: #0a0a0a;
+      font-size: 17px;
+      font-weight: 600;
+      padding: 14px 36px;
+      border-radius: 12px;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .download-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 255, 255, 0.1);
+    }
+
+    .download-btn small {
+      display: block;
+      font-size: 12px;
+      font-weight: 400;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .alt-install {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .alt-install code {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 3px 8px;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 13px;
+      color: #ccc;
+    }
+
+    .preview {
+      margin: 40px auto;
+      padding: 0 24px;
+      max-width: 520px;
+      text-align: center;
+    }
+
+    .menubar-mock {
+      display: inline-flex;
+      align-items: center;
+      gap: 16px;
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 14px 24px;
+      font-family: "SF Mono", Menlo, monospace;
+      font-size: 14px;
+    }
+
+    .usage-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .usage-label { color: #888; }
+
+    .bar {
+      width: 64px;
+      height: 8px;
+      background: #333;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .bar-fill-green {
+      height: 100%;
+      background: #22c55e;
+      border-radius: 4px;
+    }
+
+    .bar-fill-yellow {
+      height: 100%;
+      background: #eab308;
+      border-radius: 4px;
+    }
+
+    .pct { color: #ccc; }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      max-width: 640px;
+      padding: 40px 24px;
+    }
+
+    .feature {
+      background: #141414;
+      border: 1px solid #222;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .feature h3 {
+      font-size: 15px;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .feature p {
+      font-size: 13px;
+      color: #888;
+      line-height: 1.5;
+    }
+
+    footer {
+      padding: 40px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: #555;
+    }
+
+    footer a {
+      color: #888;
+      text-decoration: none;
+    }
+
+    footer a:hover { color: #ccc; }
+
+    .req {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hero">
+    <h1>ClaudeMeter</h1>
+    <p>See your Claude.ai usage at a glance — right in the menu bar.</p>
+    <a class="download-btn" href="https://github.com/seolsnow/ClaudeMeter/releases/latest/download/ClaudeMeter.zip">
+      Download for macOS
+      <small>v0.1.0 &middot; macOS 14+</small>
+    </a>
+    <div class="alt-install">
+      or &nbsp;<code>brew tap seolsnow/tap && brew install --cask claudemeter</code>
+    </div>
+    <p class="req">Requires macOS Sonoma or later</p>
+  </div>
+
+  <div class="preview">
+    <div class="menubar-mock">
+      <div class="usage-item">
+        <span class="usage-label">5h</span>
+        <div class="bar"><div class="bar-fill-green" style="width: 24%"></div></div>
+        <span class="pct">24%</span>
+      </div>
+      <div class="usage-item">
+        <span class="usage-label">7d</span>
+        <div class="bar"><div class="bar-fill-yellow" style="width: 78%"></div></div>
+        <span class="pct">78%</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="features">
+    <div class="feature">
+      <h3>Real-time tracking</h3>
+      <p>Polls Claude.ai every 30 seconds. No API tokens consumed.</p>
+    </div>
+    <div class="feature">
+      <h3>Two usage windows</h3>
+      <p>5-hour session limit and 7-day rolling limit, always visible.</p>
+    </div>
+    <div class="feature">
+      <h3>Color-coded bars</h3>
+      <p>Green, yellow, red — know at a glance when you're running low.</p>
+    </div>
+    <div class="feature">
+      <h3>Multi-org support</h3>
+      <p>Automatically detects your organizations. Switch anytime.</p>
+    </div>
+  </div>
+
+  <footer>
+    <a href="https://github.com/seolsnow/ClaudeMeter">GitHub</a> &nbsp;&middot;&nbsp; MIT License
+  </footer>
+
+</body>
+</html>

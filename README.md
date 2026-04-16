@@ -31,31 +31,25 @@ Click to expand:
 - Xcode 15+ (for building from source)
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) (`brew install xcodegen`)
 
-## Build & Install
+## Install
 
+### Download
+Download the latest release from the [releases page](https://github.com/seolsnow/ClaudeMeter/releases/latest), unzip, and drag to Applications.
+
+### Homebrew
 ```bash
-# Clone
-git clone https://github.com/hsc-dev/claude-meter.git
-cd claude-meter
-
-# Install xcodegen if you haven't
-brew install xcodegen
-
-# Generate Xcode project & build
-xcodegen generate
-xcodebuild -project ClaudeMeter.xcodeproj \
-  -scheme ClaudeMeter \
-  -configuration Release build
-
-# Copy to Applications
-APP=$(xcodebuild -project ClaudeMeter.xcodeproj \
-  -scheme ClaudeMeter -configuration Release \
-  -showBuildSettings 2>/dev/null | \
-  awk -F= '/ BUILT_PRODUCTS_DIR =/ { gsub(/^[ \t]+|[ \t]+$/, "", $2); print $2 }')
-cp -R "$APP/ClaudeMeter.app" /Applications/
+brew tap seolsnow/tap
+brew install --cask claudemeter
 ```
 
-Then launch from Spotlight (`Cmd+Space` → "ClaudeMeter").
+### Build from source
+```bash
+git clone https://github.com/seolsnow/ClaudeMeter.git
+cd ClaudeMeter
+brew install xcodegen
+xcodegen generate
+xcodebuild -project ClaudeMeter.xcodeproj -scheme ClaudeMeter -configuration Release build
+```
 
 ## Setup
 
