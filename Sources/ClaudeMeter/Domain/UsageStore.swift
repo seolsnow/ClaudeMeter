@@ -6,6 +6,7 @@ import Observation
 final class UsageStore {
     var snapshot: UsageSnapshot = .empty
     var accountLabel: String?      // e.g. "hanseol@example.com · Acme"
+    var lastSuccessAt: Date?       // last time /oauth/usage returned 2xx
 
     nonisolated(unsafe) private let api = AnthropicOAuthClient()
     private var timer: Timer?
@@ -57,6 +58,7 @@ final class UsageStore {
                 isLoading: false,
                 isLoggedIn: true
             )
+            lastSuccessAt = Date()
         } catch OAuthError.missingCredentials {
             snapshot = UsageSnapshot(
                 sessionPercent: 0, sessionResetAt: nil,

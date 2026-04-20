@@ -28,6 +28,9 @@ struct DetailPanelView: View {
                     Divider()
                     errorBanner(errorMessage)
                 }
+                if let lastUpdated = lastUpdatedText(store.lastSuccessAt) {
+                    lastUpdatedRow(lastUpdated)
+                }
             }
             footerSection
         }
@@ -144,12 +147,24 @@ struct DetailPanelView: View {
             HStack {
                 Button("Refresh") { Task { await store.refresh() } }
                 Spacer()
-                Text("ClaudeMeter")
+                Text("ClaudeMeter\(Self.versionSuffix)")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                 Spacer()
                 Button("Quit", action: onQuit)
             }
+        }
+    }
+
+    private func lastUpdatedRow(_ text: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "clock")
+                .foregroundStyle(.secondary)
+                .font(.caption2)
+            Text("Updated \(text)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Spacer()
         }
     }
 
@@ -169,4 +184,20 @@ struct DetailPanelView: View {
         if remaining <= 0 { return "Resetting now." }
         return "Resets at \(Self.resetFormatter.string(from: resetAt))"
     }
+
+    private func lastUpdatedText(_ date: Date?) -> String? {
+        guard let date else { return nil }
+        let seconds = Int(nowTick.timeIntervalSince(date))
+        if seconds < 1 { return "just now" }
+        if seconds < 60 { return "\(seconds)s ago" }
+        let minutes = seconds / 60
+        if minutes < 60 { return "\(minutes)m ago" }
+        let hours = minutes / 60
+        return "\(hours)h ago"
+    }
+
+    private static let versionSuffix: String = {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
+        return version.map { " v\($0)" } ?? ""
+    }()
 }
