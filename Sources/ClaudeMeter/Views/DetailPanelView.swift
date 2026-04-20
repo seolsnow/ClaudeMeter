@@ -145,8 +145,6 @@ struct DetailPanelView: View {
             }
 
             HStack {
-                Button("Refresh") { Task { await store.refresh() } }
-                Spacer()
                 Text("ClaudeMeter\(Self.versionSuffix)")
                     .font(.caption2)
                     .foregroundStyle(.secondary)

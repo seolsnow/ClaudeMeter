@@ -22,11 +22,26 @@ final class UsageStore {
         Task { @MainActor in self.start() }
     }
 
+    private static let warmupInterval: Duration = .seconds(5)
+    private static let warmupMaxAttempts = 10
+
     func start() {
         guard !started else { return }
         started = true
 
-        Task { await refresh() }
+        Task { @MainActor in await self.refresh() }
+
+        // Cold-start warmup: the first refresh can fail if the user hasn't
+        // answered the Keychain "Always Allow" prompt yet. Retry every 5s
+        // (bounded) until the first success, so the panel doesn't sit in
+        // "not detected" for up to 60s waiting on the main timer.
+        Task { @MainActor [weak self] in
+            for _ in 0..<Self.warmupMaxAttempts {
+                try? await Task.sleep(for: Self.warmupInterval)
+                guard let self, self.lastSuccessAt == nil else { return }
+                await self.refresh()
+            }
+        }
 
         timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
