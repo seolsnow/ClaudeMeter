@@ -8,10 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		0EED7280F5C6FF4CD91768EA /* MenuBarLabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684FF80715F3936C10E70BDB /* MenuBarLabel.swift */; };
-		28570C0225BCD56C72FB66A6 /* ClaudeAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B71341715E12A48E96131FEB /* ClaudeAPIClient.swift */; };
-		2E52BB68D72EAB1F484BDCF6 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6D0CC9808CE415FF6385631D /* WebKit.framework */; };
-		32CA43473F71B0E2AC907A32 /* LoginWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11C1FF40285AD8FFD5FFA582 /* LoginWebView.swift */; };
 		3ADA7E2113537A5318B0BB98 /* ProgressBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 903D44412259103E83D4E76D /* ProgressBarView.swift */; };
+		3FE2215CFAFD344B614AA4A2 /* AnthropicOAuthClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10120095D2C98E17AF854EAE /* AnthropicOAuthClient.swift */; };
 		5949B740D0BDFF5C9BFD10F8 /* UsageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBB09C690E200E41667758FB /* UsageStore.swift */; };
 		6E54A105F42F8006167107BF /* UsageSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D05B238A25D22C75D1E5500 /* UsageSnapshot.swift */; };
 		A76A64F0E2A0851FA74B9ECD /* PlaceholderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1C00E0F9534B944CE23212C /* PlaceholderTests.swift */; };
@@ -33,38 +31,25 @@
 
 /* Begin PBXFileReference section */
 		0E19F8C40C7E13B6FF61B8E1 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
-		11C1FF40285AD8FFD5FFA582 /* LoginWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginWebView.swift; sourceTree = "<group>"; };
+		10120095D2C98E17AF854EAE /* AnthropicOAuthClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicOAuthClient.swift; sourceTree = "<group>"; };
 		141BFEB4A3284D6D880247F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4ABD725253254022A17D3504 /* ClaudeMeterApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeMeterApp.swift; sourceTree = "<group>"; };
 		684FF80715F3936C10E70BDB /* MenuBarLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarLabel.swift; sourceTree = "<group>"; };
 		6C9490E456192838C4B1CD6F /* ClaudeMeter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ClaudeMeter.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6D05B238A25D22C75D1E5500 /* UsageSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageSnapshot.swift; sourceTree = "<group>"; };
-		6D0CC9808CE415FF6385631D /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		903D44412259103E83D4E76D /* ProgressBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressBarView.swift; sourceTree = "<group>"; };
 		B1BDB483844D78962BF380A2 /* ClaudeMeterTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ClaudeMeterTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		B71341715E12A48E96131FEB /* ClaudeAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeAPIClient.swift; sourceTree = "<group>"; };
 		D1C00E0F9534B944CE23212C /* PlaceholderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderTests.swift; sourceTree = "<group>"; };
 		E317F8CD95F2F006DD9B5B30 /* AppIcon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = AppIcon.icns; sourceTree = "<group>"; };
 		FBB09C690E200E41667758FB /* UsageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStore.swift; sourceTree = "<group>"; };
 		FCB81A92F9640436607654DB /* DetailPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DetailPanelView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
-/* Begin PBXFrameworksBuildPhase section */
-		50BB0B90A6DF6BE92E23F5C1 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				2E52BB68D72EAB1F484BDCF6 /* WebKit.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXFrameworksBuildPhase section */
-
 /* Begin PBXGroup section */
 		12FB28E260A31AD24C01A364 /* Domain */ = {
 			isa = PBXGroup;
 			children = (
-				B71341715E12A48E96131FEB /* ClaudeAPIClient.swift */,
+				10120095D2C98E17AF854EAE /* AnthropicOAuthClient.swift */,
 				FBB09C690E200E41667758FB /* UsageStore.swift */,
 			);
 			path = Domain;
@@ -83,7 +68,6 @@
 			children = (
 				2D68F1C6A1031064C88D311E /* Sources */,
 				92386A672EE812A6D39F2823 /* Tests */,
-				FCD57738161CACC5D3A3617D /* Frameworks */,
 				331A46C41F4E380E6CF782FD /* Products */,
 			);
 			sourceTree = "<group>";
@@ -134,7 +118,6 @@
 			isa = PBXGroup;
 			children = (
 				FCB81A92F9640436607654DB /* DetailPanelView.swift */,
-				11C1FF40285AD8FFD5FFA582 /* LoginWebView.swift */,
 				684FF80715F3936C10E70BDB /* MenuBarLabel.swift */,
 				903D44412259103E83D4E76D /* ProgressBarView.swift */,
 			);
@@ -152,14 +135,6 @@
 				9C885196FBF6B73784C6C686 /* Views */,
 			);
 			path = ClaudeMeter;
-			sourceTree = "<group>";
-		};
-		FCD57738161CACC5D3A3617D /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				6D0CC9808CE415FF6385631D /* WebKit.framework */,
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -189,7 +164,6 @@
 			buildPhases = (
 				3DD1255A9DBD30BAB485CD8F /* Sources */,
 				E3ACD70A0C364BE15F235401 /* Resources */,
-				50BB0B90A6DF6BE92E23F5C1 /* Frameworks */,
 			);
 			buildRules = (
 			);
@@ -255,10 +229,9 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				28570C0225BCD56C72FB66A6 /* ClaudeAPIClient.swift in Sources */,
+				3FE2215CFAFD344B614AA4A2 /* AnthropicOAuthClient.swift in Sources */,
 				D71C17F878539AE97721C87F /* ClaudeMeterApp.swift in Sources */,
 				AA06703B231E1841A6E9EC2F /* DetailPanelView.swift in Sources */,
-				32CA43473F71B0E2AC907A32 /* LoginWebView.swift in Sources */,
 				0EED7280F5C6FF4CD91768EA /* MenuBarLabel.swift in Sources */,
 				3ADA7E2113537A5318B0BB98 /* ProgressBarView.swift in Sources */,
 				EC7EDB432F64947D6218A048 /* Settings.swift in Sources */,

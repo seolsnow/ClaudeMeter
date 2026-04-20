@@ -1,5 +1,4 @@
 import SwiftUI
-import WebKit
 
 struct DetailPanelView: View {
     @Bindable var store: UsageStore
@@ -15,14 +14,18 @@ struct DetailPanelView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             if !store.snapshot.isLoggedIn && !store.snapshot.isLoading {
-                loginSection
+                setupSection
                 Divider()
             } else {
                 sessionSection
                 Divider()
                 weeklySection
-                Divider()
+                if let account = store.accountLabel {
+                    Divider()
+                    accountBanner(account)
+                }
                 if let errorMessage = store.snapshot.errorMessage {
+                    Divider()
                     errorBanner(errorMessage)
                 }
             }
@@ -37,19 +40,20 @@ struct DetailPanelView: View {
 
     // MARK: - Sections
 
-    private var loginSection: some View {
+    private var setupSection: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Not logged in to Claude")
+            Text("Claude Code not detected")
                 .font(.headline)
-            Text("Log in to view your usage.")
+            Text("ClaudeMeter reads usage from the Claude Code CLI's Keychain credentials.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            Button("Log in to Claude") {
-                LoginWindowController.shared.open {
-                    Task { await store.refresh() }
-                }
-            }
-            .buttonStyle(.borderedProminent)
+                .fixedSize(horizontal: false, vertical: true)
+            Text("Install Claude Code and run `claude` once to sign in, then click Retry.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Button("Retry") { Task { await store.refresh() } }
+                .buttonStyle(.borderedProminent)
         }
     }
 
@@ -101,6 +105,20 @@ struct DetailPanelView: View {
         }
     }
 
+    private func accountBanner(_ label: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "person.crop.circle")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+            Text(label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
+            Spacer()
+        }
+    }
+
     private func errorBanner(_ message: String) -> some View {
         HStack(spacing: 6) {
             Image(systemName: "exclamationmark.triangle.fill")
@@ -115,33 +133,12 @@ struct DetailPanelView: View {
 
     private var footerSection: some View {
         VStack(spacing: 8) {
-            // Org picker (compact)
-            if store.snapshot.isLoggedIn && store.organizations.count > 1 {
-                Picker("Org", selection: Binding(
-                    get: { store.orgId ?? "" },
-                    set: { store.setOrganization($0) }
-                )) {
-                    ForEach(store.organizations) { org in
-                        Text(org.name).tag(org.uuid)
-                    }
-                }
-                .pickerStyle(.menu)
-                .labelsHidden()
-                .font(.caption)
-            }
-
             HStack {
                 Toggle("Launch at Login", isOn: $launchAtLogin)
                     .toggleStyle(.checkbox)
                     .font(.caption)
                     .onChange(of: launchAtLogin) { _, val in settings.setLaunchAtLogin(val) }
-
                 Spacer()
-
-                if store.snapshot.isLoggedIn {
-                    Button("Log out") { logOut() }
-                        .font(.caption)
-                }
             }
 
             HStack {
@@ -171,28 +168,5 @@ struct DetailPanelView: View {
         let remaining = resetAt.timeIntervalSince(nowTick)
         if remaining <= 0 { return "Resetting now." }
         return "Resets at \(Self.resetFormatter.string(from: resetAt))"
-    }
-
-    private func logOut() {
-        // Clear only claude.ai cookies from HTTPCookieStorage
-        let cookieStorage = HTTPCookieStorage.shared
-        for cookie in cookieStorage.cookies(for: URL(string: "https://claude.ai")!) ?? [] {
-            cookieStorage.deleteCookie(cookie)
-        }
-        // Clear only claude.ai cookies from WKWebView (preserve Google session for quick re-login)
-        let store = self.store
-        let wkCookieStore = WKWebsiteDataStore.default().httpCookieStore
-        wkCookieStore.getAllCookies { cookies in
-            let group = DispatchGroup()
-            for cookie in cookies where cookie.domain.contains("claude.ai") {
-                group.enter()
-                wkCookieStore.delete(cookie) { group.leave() }
-            }
-            group.notify(queue: .main) {
-                Task { @MainActor in
-                    await store.refresh()
-                }
-            }
-        }
     }
 }

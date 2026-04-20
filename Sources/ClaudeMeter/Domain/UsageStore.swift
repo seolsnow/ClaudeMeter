@@ -5,12 +5,10 @@ import Observation
 @MainActor
 final class UsageStore {
     var snapshot: UsageSnapshot = .empty
-    var organizations: [Organization] = []
+    var accountLabel: String?      // e.g. "hanseol@example.com · Acme"
 
-    nonisolated(unsafe) private let api = ClaudeAPIClient()
+    nonisolated(unsafe) private let api = AnthropicOAuthClient()
     private var timer: Timer?
-    private(set) var orgId: String?
-
     private var started = false
 
     private static let isoFormatter: ISO8601DateFormatter = {
@@ -20,10 +18,7 @@ final class UsageStore {
     }()
 
     init() {
-        orgId = UserDefaults.standard.string(forKey: "selectedOrgId")
-        Task { @MainActor in
-            self.start()
-        }
+        Task { @MainActor in self.start() }
     }
 
     func start() {
@@ -40,94 +35,41 @@ final class UsageStore {
     }
 
     func refresh() async {
-        let orgsResult: [Organization]
         do {
-            orgsResult = try await api.fetchOrganizations()
-        } catch {
-            let isAuthError = error is DecodingError || (error as? APIError) == .sessionInvalid
-            if isAuthError || !snapshot.isLoggedIn {
-                orgId = nil
-                UserDefaults.standard.removeObject(forKey: "selectedOrgId")
-                snapshot = UsageSnapshot(
-                    sessionPercent: 0, sessionResetAt: nil,
-                    weeklyPercent: 0, weeklyResetAt: nil,
-                    isLoading: false, isLoggedIn: false
-                )
-            } else {
-                // Network/server failure while logged in — keep stale data, surface error.
-                snapshot = UsageSnapshot(
-                    sessionPercent: snapshot.sessionPercent,
-                    sessionResetAt: snapshot.sessionResetAt,
-                    weeklyPercent: snapshot.weeklyPercent,
-                    weeklyResetAt: snapshot.weeklyResetAt,
-                    isLoading: false,
-                    isLoggedIn: true,
-                    errorMessage: Self.describe(error)
-                )
-            }
-            return
-        }
+            async let profile = api.fetchProfile()
+            async let usage = api.fetchUsage()
+            let (p, u) = try await (profile, usage)
 
-        guard !orgsResult.isEmpty else {
+            let email = p.account.email ?? p.account.displayName ?? ""
+            accountLabel = email.isEmpty ? p.organization.name : "\(email) · \(p.organization.name)"
+
+            let sessionReset = u.fiveHour?.resetsAt.flatMap { Self.isoFormatter.date(from: $0) }
+            let weeklyReset = u.sevenDay?.resetsAt.flatMap { Self.isoFormatter.date(from: $0) }
+
+            snapshot = UsageSnapshot(
+                sessionPercent: (u.fiveHour?.utilization ?? 0) / 100.0,
+                sessionResetAt: sessionReset,
+                weeklyPercent: (u.sevenDay?.utilization ?? 0) / 100.0,
+                weeklyResetAt: weeklyReset,
+                isLoading: false,
+                isLoggedIn: true
+            )
+        } catch OAuthError.missingCredentials {
             snapshot = UsageSnapshot(
                 sessionPercent: 0, sessionResetAt: nil,
                 weeklyPercent: 0, weeklyResetAt: nil,
                 isLoading: false, isLoggedIn: false
             )
-            return
-        }
-
-        organizations = orgsResult
-
-        // Reset saved orgId if it no longer belongs to current account
-        if let saved = orgId, !orgsResult.contains(where: { $0.uuid == saved }) {
-            orgId = nil
-            UserDefaults.standard.removeObject(forKey: "selectedOrgId")
-        }
-
-        // Auto-select org: try each until one returns actual usage data
-        if orgId == nil {
-            for org in organizations {
-                if let usage = try? await api.fetchUsage(orgId: org.uuid),
-                   usage.fiveHour != nil || usage.sevenDay != nil {
-                    orgId = org.uuid
-                    UserDefaults.standard.set(org.uuid, forKey: "selectedOrgId")
-                    break
-                }
-            }
-        }
-
-        guard let orgId else {
-            snapshot = UsageSnapshot(
-                sessionPercent: 0, sessionResetAt: nil,
-                weeklyPercent: 0, weeklyResetAt: nil,
-                isLoading: false, isLoggedIn: true
-            )
-            return
-        }
-
-        do {
-            let usage = try await api.fetchUsage(orgId: orgId)
-
-            let sessionReset = usage.fiveHour?.resetsAt.flatMap { Self.isoFormatter.date(from: $0) }
-            let weeklyReset = usage.sevenDay?.resetsAt.flatMap { Self.isoFormatter.date(from: $0) }
-
-            snapshot = UsageSnapshot(
-                sessionPercent: (usage.fiveHour?.utilization ?? 0) / 100.0,
-                sessionResetAt: sessionReset,
-                weeklyPercent: (usage.sevenDay?.utilization ?? 0) / 100.0,
-                weeklyResetAt: weeklyReset,
-                isLoading: false,
-                isLoggedIn: true
-            )
+            accountLabel = nil
         } catch {
+            // Network/server failure — keep stale values, surface error.
             snapshot = UsageSnapshot(
                 sessionPercent: snapshot.sessionPercent,
                 sessionResetAt: snapshot.sessionResetAt,
                 weeklyPercent: snapshot.weeklyPercent,
                 weeklyResetAt: snapshot.weeklyResetAt,
                 isLoading: false,
-                isLoggedIn: true,
+                isLoggedIn: snapshot.isLoggedIn,
                 errorMessage: Self.describe(error)
             )
         }
@@ -141,18 +83,18 @@ final class UsageStore {
             case .timedOut:
                 return "Request timed out."
             case .cannotFindHost, .cannotConnectToHost, .dnsLookupFailed:
-                return "Can't reach Claude.ai."
+                return "Can't reach Anthropic."
             default:
                 return "Network error."
             }
         }
+        if case OAuthError.refreshFailed(let code) = error {
+            return "Auth refresh failed (\(code))."
+        }
+        if case OAuthError.httpError(let code) = error {
+            return "Server error (\(code))."
+        }
         return "Couldn't load usage."
-    }
-
-    func setOrganization(_ newOrgId: String) {
-        orgId = newOrgId
-        UserDefaults.standard.set(newOrgId, forKey: "selectedOrgId")
-        Task { await refresh() }
     }
 
     func stop() {
