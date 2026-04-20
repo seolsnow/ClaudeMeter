@@ -9,9 +9,8 @@ A macOS menu bar app that shows your Claude session (5h) and weekly (7d) usage a
 
 - **Menu bar indicator** with colored progress bars (green / yellow / red) and percentages
 - **5-hour session** and **7-day rolling** usage tracking
-- **Real-time data** from Claude.ai API (no token cost — uses the same internal endpoint as the Claude web app)
-- **Auto-refresh** every 30 seconds
-- **Multi-org support** with automatic organization detection
+- **Zero-login setup** — reuses the OAuth credentials of the [Claude Code CLI](https://docs.claude.com/en/docs/claude-code) already installed on your Mac
+- **Auto-refresh** every 60 seconds (no tokens consumed — queries a metadata-only endpoint)
 - **Launch at login** option
 - Light/dark mode support
 
@@ -28,7 +27,7 @@ Menu bar shows colored progress bars with percentages; click to expand the panel
 
 ## Is It Safe?
 
-This is a fully open-source project — every line of code is visible in this repo. Don't take our word for it: **ask Claude, ChatGPT, or any AI you trust** to review the source code and confirm there's nothing malicious. The app only communicates with `claude.ai` (your existing account), stores all data locally, and includes zero analytics or telemetry.
+This is a fully open-source project — every line of code is visible in this repo. Don't take our word for it: **ask Claude, ChatGPT, or any AI you trust** to review the source code and confirm there's nothing malicious. The app only communicates with `api.anthropic.com` / `console.anthropic.com` (your existing Claude account, via the Claude Code CLI's credentials), stores all data locally, and includes zero analytics or telemetry.
 
 ## Install
 
@@ -62,18 +61,23 @@ On first launch, macOS will show a security warning — this is normal for open-
 
 ## Setup
 
-1. **Launch the app** — a widget appears in your menu bar
-2. **Click the widget** → click **"Log in to Claude"**
-3. **Sign in** via the browser window that opens
-4. Done — your usage appears automatically
+**Prerequisite:** You must have the [Claude Code CLI](https://docs.claude.com/en/docs/claude-code) installed and logged in on this Mac. ClaudeMeter reads its OAuth credentials from Keychain — it does not perform its own login.
 
-The app auto-selects the first organization with active usage. If you have multiple orgs, use the dropdown in the panel to switch.
+1. Make sure `claude` (the CLI) works in your terminal and you're signed in
+2. **Launch ClaudeMeter** — the widget appears in your menu bar
+3. macOS may prompt you once to allow ClaudeMeter to read the Keychain item — click **Always Allow**
+4. Done — your usage appears automatically
 
 ## How It Works
 
-The widget polls `https://claude.ai/api/organizations/{orgId}/usage` every 30 seconds using your Claude.ai session cookies (obtained via in-app login). This is the same endpoint the Claude web app uses to display your usage bar — **no API tokens are consumed**.
+On each refresh cycle (every 60 seconds), ClaudeMeter:
 
-The API returns:
+1. Reads the OAuth access token from the `Claude Code-credentials` Keychain item (the same item the Claude Code CLI manages)
+2. Calls `https://api.anthropic.com/api/oauth/profile` to identify the account
+3. Calls `https://api.anthropic.com/api/oauth/usage` to get current usage windows
+4. If the access token is close to expiry, refreshes it via `https://console.anthropic.com/v1/oauth/token`
+
+These are metadata-only endpoints — **no model tokens are consumed**. The response includes:
 - `five_hour.utilization` — percentage of your 5h session limit used
 - `seven_day.utilization` — percentage of your 7d rolling limit used
 - Reset timestamps for each window
@@ -89,35 +93,43 @@ The API returns:
 ## Privacy
 
 - All data stays local on your machine
-- Cookies are stored in the app's own cookie storage
-- No data is sent anywhere except to `claude.ai` (your existing account)
+- No separate credential store — ClaudeMeter reads the OAuth token Claude Code CLI already placed in Keychain; refreshed tokens are held only in memory
+- No data is sent anywhere except to Anthropic's official domains (`api.anthropic.com`, `console.anthropic.com`) using your existing account
 - No analytics or telemetry
 
 ## Known Limitations
 
-- **Google Passkey login is not supported.** macOS WKWebView does not support platform passkeys (Touch ID) without a special Apple entitlement reserved for browser apps. When logging in with Google, use password authentication instead of passkey — click "Try another way" on the Google passkey prompt.
+- **Requires Claude Code CLI to be installed and signed in.** ClaudeMeter intentionally does not implement its own login flow; it piggybacks on the CLI's credentials. If you have not used `claude login` on this Mac, the app will show "Not logged in".
+- **Repeated Keychain prompts on ad-hoc-signed builds.** Because the release `.app` is ad-hoc signed, macOS may re-prompt for Keychain access on every refresh. Click **Always Allow** once; if prompts keep appearing, this is a known cdhash-pinning limitation that is resolved by signing with an Apple Developer certificate (not yet set up for this project).
 
 ## Troubleshooting
 
-**Widget shows 0% 0%**
-- Click the widget and check if you're logged in
-- Try clicking "Refresh"
-- If you have multiple orgs, switch to the one with your active plan
+**Widget shows "Not logged in"**
+- Open a terminal and confirm `claude` is installed and that `claude` commands work without prompting for login
+- If you just installed the CLI, run any Claude Code command once to trigger the initial Keychain write
+- Quit and relaunch ClaudeMeter after signing in
 
-**Login window closes immediately**
-- This was fixed — the login opens as a standalone window
+**Keychain prompt appears every 60 seconds**
+- Click **Always Allow** in the dialog
+- If it still re-prompts, see "Known Limitations" above — this is a signing limitation
 
-**"Log in to Claude" button doesn't appear**
-- The app may have cached cookies from a previous session
-- Click "Log out" in the panel, then log in again
+**Widget stuck at 0% / stale values**
+- Click the widget → **Refresh**
+- If the error persists, the token may have expired; running any `claude` command in your terminal will refresh it
 
 ## Tech Stack
 
 - Swift 6 / SwiftUI
 - `MenuBarExtra` with `.window` style
-- `WKWebView` for in-app Claude.ai login
-- `URLSession` with shared cookie storage
+- Keychain Services for reading Claude Code CLI's OAuth token
+- `URLSession` with OAuth 2.0 Bearer auth against `api.anthropic.com`
 - `XcodeGen` for project generation
+
+## Acknowledgments
+
+ClaudeMeter was built with awareness of — and respect for — excellent prior work in this space, including [ccusage](https://github.com/ryoppippi/ccusage) and [Codexbar](https://github.com/steipete/codexbar). Parts of the approach here were informed by studying how those projects solved similar problems, and full credit goes to their authors for blazing the trail.
+
+ClaudeMeter exists because I wanted something slightly different: the lightest possible menu bar app that surfaces usage at a glance, with no CLI, no dashboard, no configuration — just a tiny gauge you can check in a fraction of a second. This is the result. If you need richer reporting, a CLI workflow, or features beyond what's here, the projects above may suit you better.
 
 ## License
 

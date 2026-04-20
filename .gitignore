@@ -3,6 +3,7 @@ xcuserdata/
 *.xcuserstate
 DerivedData/
 build/
+*.profraw
 
 # Claude Code
 .claude/

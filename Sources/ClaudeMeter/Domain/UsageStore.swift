@@ -27,7 +27,7 @@ final class UsageStore {
 
         Task { await refresh() }
 
-        timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
+        timer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
                 await self?.refresh()
             }

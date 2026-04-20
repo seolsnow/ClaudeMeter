@@ -73,8 +73,8 @@ final class AnthropicOAuthClient: @unchecked Sendable {
     private let session: URLSession
 
     // Keychain reads trigger a user consent prompt on ad-hoc-signed builds
-    // (cdhash-pinned ACL). Cache once per app launch so 30-second refresh
-    // cycles don't re-hit Keychain. Refreshed tokens stay in memory; the
+    // (cdhash-pinned ACL). Cache once per app launch so the periodic refresh
+    // cycle doesn't re-hit Keychain. Refreshed tokens stay in memory; the
     // Claude Code CLI manages the on-disk item.
     private let lock = NSLock()
     private var cachedCreds: OAuthCredentials?

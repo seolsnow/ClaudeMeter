@@ -44,7 +44,7 @@ cask "claudemeter" do
 
   url "https://github.com/${REPO}/releases/download/v#{version}/ClaudeMeter.zip"
   name "ClaudeMeter"
-  desc "macOS menu bar app that shows your Claude.ai usage at a glance"
+  desc "macOS menu bar app that shows your Claude usage at a glance"
   homepage "https://github.com/${REPO}"
 
   depends_on macos: ">= :sonoma"
@@ -52,8 +52,9 @@ cask "claudemeter" do
   app "ClaudeMeter.app"
 
   zap trash: [
-    "~/Library/Cookies/com.devsisters.claudemeter.binarycookies",
     "~/Library/Preferences/com.devsisters.claudemeter.plist",
+    "~/Library/Application Support/com.devsisters.claudemeter",
+    "~/Library/Caches/com.devsisters.claudemeter",
   ]
 end
 CASK
