@@ -82,7 +82,10 @@ final class UsageStore {
             )
             accountLabel = nil
         } catch {
-            // Network/server failure — keep stale values, surface error.
+            // Network/server failure — keep stale values. Suppress the error if
+            // the last success was within one refresh cycle (60s), so transient
+            // 429s during rapid panel reopens don't flash a banner.
+            let hasRecentSuccess = lastSuccessAt.map { Date().timeIntervalSince($0) < 60 } ?? false
             snapshot = UsageSnapshot(
                 sessionPercent: snapshot.sessionPercent,
                 sessionResetAt: snapshot.sessionResetAt,
@@ -90,7 +93,7 @@ final class UsageStore {
                 weeklyResetAt: snapshot.weeklyResetAt,
                 isLoading: false,
                 isLoggedIn: snapshot.isLoggedIn,
-                errorMessage: Self.describe(error)
+                errorMessage: hasRecentSuccess ? nil : Self.describe(error)
             )
         }
     }
