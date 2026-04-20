@@ -131,6 +131,8 @@ ClaudeMeter was built with awareness of — and respect for — excellent prior 
 
 ClaudeMeter exists because I wanted something slightly different: the lightest possible menu bar app that surfaces usage at a glance, with no CLI, no dashboard, no configuration — just a tiny gauge you can check in a fraction of a second. This is the result. If you need richer reporting, a CLI workflow, or features beyond what's here, the projects above may suit you better.
 
+A note on where this comes from: I'm a data analyst by trade, and ClaudeMeter is my first macOS app. That background shaped the design — I wanted the kind of passive, always-visible metric I'm used to seeing on dashboards, shrunk down to the smallest possible footprint. If the app feels more like a gauge than an application, that's why.
+
 ## License
 
 MIT

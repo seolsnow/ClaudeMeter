@@ -35,13 +35,16 @@ final class UsageStore {
     }
 
     func refresh() async {
-        do {
-            async let profile = api.fetchProfile()
-            async let usage = api.fetchUsage()
-            let (p, u) = try await (profile, usage)
-
+        // Profile (email, org name) is effectively static. Fetch once per app
+        // launch, best-effort — failing here must not block the usage call or
+        // surface an error, since the next cycle will retry until it succeeds.
+        if accountLabel == nil, let p = try? await api.fetchProfile() {
             let email = p.account.email ?? p.account.displayName ?? ""
             accountLabel = email.isEmpty ? p.organization.name : "\(email) · \(p.organization.name)"
+        }
+
+        do {
+            let u = try await api.fetchUsage()
 
             let sessionReset = u.fiveHour?.resetsAt.flatMap { Self.isoFormatter.date(from: $0) }
             let weeklyReset = u.sevenDay?.resetsAt.flatMap { Self.isoFormatter.date(from: $0) }
