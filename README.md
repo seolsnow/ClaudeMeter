@@ -53,11 +53,22 @@ make install
 
 ### macOS Security Warning
 
-On first launch, macOS will show a security warning — this is normal for open-source apps without Apple Developer signing ($99/yr). To open:
+ClaudeMeter is ad-hoc signed (not notarized with an Apple Developer certificate, which costs $99/yr). On first launch, macOS will show one of these warnings:
+
+**"Apple could not verify ClaudeMeter is free of malware"**
 
 - **macOS Sequoia (15+):** System Settings → Privacy & Security → scroll down → click **"Open Anyway"** next to ClaudeMeter
-- **macOS Sonoma (14):** System Settings → Privacy & Security → click **"Open Anyway"**
-- Or: right-click the app → **Open** → click **Open** in the dialog
+- **macOS Sonoma (14):** right-click the app → **Open** → click **Open** in the dialog
+
+**"ClaudeMeter is damaged and can't be opened"**
+
+This happens when macOS adds a quarantine flag to apps downloaded from a browser. Run this once in Terminal, then open normally:
+
+```bash
+xattr -cr /Applications/ClaudeMeter.app
+```
+
+Prefer to verify safety yourself? The entire codebase is in this repo — ask any AI to review it, or build from source (Option 3).
 
 ## Setup
 
@@ -81,14 +92,6 @@ These are metadata-only endpoints — **no model tokens are consumed**. The resp
 - `five_hour.utilization` — percentage of your 5h session limit used
 - `seven_day.utilization` — percentage of your 7d rolling limit used
 - Reset timestamps for each window
-
-## Color Coding
-
-| Usage | Color |
-|-------|-------|
-| < 75% | Green |
-| 75% - 90% | Yellow |
-| >= 90% | Red |
 
 ## Privacy
 
