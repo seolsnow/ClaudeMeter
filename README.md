@@ -29,7 +29,7 @@ Menu bar shows colored progress bars with percentages; click to expand the panel
 
 This is a fully open-source project — every line of code is visible in this repo. Don't take our word for it: **ask Claude, ChatGPT, or any AI you trust** to review the source code and confirm there's nothing malicious. The app only communicates with `api.anthropic.com` / `console.anthropic.com` (your existing Claude account, via the Claude Code CLI's credentials), stores all data locally, and includes zero analytics or telemetry.
 
-## Install
+## Install & Upgrade
 
 ### Option 1: Download (recommended)
 
@@ -38,16 +38,35 @@ This is a fully open-source project — every line of code is visible in this re
 
 ### Option 2: Homebrew
 
+Install:
+
 ```bash
 brew tap seolsnow/tap
 brew install --cask claudemeter
 ```
 
+Upgrade:
+
+```bash
+brew update
+brew upgrade --cask claudemeter
+```
+
 ### Option 3: Build from source
+
+Install:
 
 ```bash
 git clone https://github.com/seolsnow/ClaudeMeter.git
 cd ClaudeMeter
+make install
+```
+
+Upgrade:
+
+```bash
+cd ~/seolsnow/ClaudeMeter   # path where you cloned it
+git pull
 make install
 ```
 

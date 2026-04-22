@@ -82,10 +82,17 @@ final class UsageStore {
             )
             accountLabel = nil
         } catch {
-            // Network/server failure — keep stale values. Suppress the error if
-            // the last success was within one refresh cycle (60s), so transient
-            // 429s during rapid panel reopens don't flash a banner.
+            // Keep stale values. 429 is always suppressed — the panel will
+            // surface it via the "Refresh delayed · updated Nm ago" row once
+            // the delay crosses the staleness threshold. Other errors keep
+            // the one-cycle (60s) grace window so a single transient failure
+            // doesn't flash a banner.
+            let is429: Bool = {
+                if case OAuthError.httpError(429) = error { return true }
+                return false
+            }()
             let hasRecentSuccess = lastSuccessAt.map { Date().timeIntervalSince($0) < 60 } ?? false
+            let suppress = is429 || hasRecentSuccess
             snapshot = UsageSnapshot(
                 sessionPercent: snapshot.sessionPercent,
                 sessionResetAt: snapshot.sessionResetAt,
@@ -93,7 +100,7 @@ final class UsageStore {
                 weeklyResetAt: snapshot.weeklyResetAt,
                 isLoading: false,
                 isLoggedIn: snapshot.isLoggedIn,
-                errorMessage: hasRecentSuccess ? nil : Self.describe(error)
+                errorMessage: suppress ? nil : Self.describe(error)
             )
         }
     }

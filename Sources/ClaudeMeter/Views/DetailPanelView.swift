@@ -8,7 +8,7 @@ struct DetailPanelView: View {
     @State private var nowTick: Date = Date()
     @State private var launchAtLogin: Bool = false
     @AppStorage("showSessionInMenuBar") private var showSession: Bool = true
-    @AppStorage("showWeeklyInMenuBar") private var showWeekly: Bool = true
+    @AppStorage("showWeeklyInMenuBar") private var showWeekly: Bool = false
     private let tickTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -27,6 +27,9 @@ struct DetailPanelView: View {
                 if let errorMessage = store.snapshot.errorMessage {
                     Divider()
                     errorBanner(errorMessage)
+                } else if let delayed = delayedText(store.lastSuccessAt) {
+                    Divider()
+                    delayedBanner(delayed)
                 }
             }
             footerSection
@@ -134,6 +137,18 @@ struct DetailPanelView: View {
         }
     }
 
+    private func delayedBanner(_ ago: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "clock")
+                .foregroundStyle(.secondary)
+                .font(.caption)
+            Text("Refresh delayed · updated \(ago)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+    }
+
     private var footerSection: some View {
         HStack {
             Toggle("Launch at Login", isOn: $launchAtLogin)
@@ -164,6 +179,18 @@ struct DetailPanelView: View {
         let remaining = resetAt.timeIntervalSince(nowTick)
         if remaining <= 0 { return "Resetting now." }
         return "Resets at \(Self.resetFormatter.string(from: resetAt))"
+    }
+
+    // Returns "Nm ago" / "Nh ago" when the last success is ≥90s stale, else nil.
+    // Drives the "Refresh delayed" row so a quiet 429 still has a visible
+    // signal once the delay outgrows one refresh cycle.
+    private func delayedText(_ lastSuccess: Date?) -> String? {
+        guard let lastSuccess else { return nil }
+        let secs = Int(nowTick.timeIntervalSince(lastSuccess))
+        guard secs >= 90 else { return nil }
+        let mins = secs / 60
+        if mins < 60 { return "\(mins)m ago" }
+        return "\(mins / 60)h ago"
     }
 
 }

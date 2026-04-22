@@ -5,7 +5,7 @@ struct ClaudeMeterApp: App {
     @State private var settings = Settings()
     @State private var store = UsageStore()
     @AppStorage("showSessionInMenuBar") private var showSession: Bool = true
-    @AppStorage("showWeeklyInMenuBar") private var showWeekly: Bool = true
+    @AppStorage("showWeeklyInMenuBar") private var showWeekly: Bool = false
 
     var body: some Scene {
         MenuBarExtra {
