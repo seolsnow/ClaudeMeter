@@ -7,9 +7,12 @@ struct DetailPanelView: View {
 
     @State private var nowTick: Date = Date()
     @State private var launchAtLogin: Bool = false
+    @State private var showingAbout = false
     @AppStorage("showSessionInMenuBar") private var showSession: Bool = true
     @AppStorage("showWeeklyInMenuBar") private var showWeekly: Bool = false
     private let tickTimer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    private static let repoURL = URL(string: "https://github.com/seolsnow/ClaudeMeter")!
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -154,6 +157,27 @@ struct DetailPanelView: View {
         }
     }
 
+    private var aboutPopover: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("ClaudeMeter")
+                .font(.headline)
+            Text("Version \(Self.versionString)")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Link(destination: Self.repoURL) {
+                HStack(spacing: 4) {
+                    Image(systemName: "arrow.up.right.square")
+                        .font(.caption2)
+                    Text("github.com/seolsnow/ClaudeMeter")
+                        .font(.caption)
+                }
+            }
+            .padding(.top, 2)
+        }
+        .padding(14)
+        .frame(width: 240, alignment: .leading)
+    }
+
     private func delayedBanner(_ ago: String) -> some View {
         HStack(spacing: 6) {
             Image(systemName: "clock")
@@ -173,9 +197,15 @@ struct DetailPanelView: View {
                 .font(.caption)
                 .onChange(of: launchAtLogin) { _, val in settings.setLaunchAtLogin(val) }
             Spacer()
-            Text("ClaudeMeter")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+            Button {
+                showingAbout.toggle()
+            } label: {
+                Text("ClaudeMeter")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .popover(isPresented: $showingAbout, arrowEdge: .bottom) { aboutPopover }
             Spacer()
             Button("Quit", action: onQuit)
         }
@@ -189,6 +219,10 @@ struct DetailPanelView: View {
         let f = DateFormatter()
         f.dateFormat = "M/d HH:mm"
         return f
+    }()
+
+    private static let versionString: String = {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
     }()
 
     private func resetText(_ resetAt: Date?) -> String {

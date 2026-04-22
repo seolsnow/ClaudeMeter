@@ -70,6 +70,7 @@ final class AnthropicOAuthClient: @unchecked Sendable {
     private static let apiBase = URL(string: "https://api.anthropic.com")!
     private static let clientID = "9d1c250a-e61b-44d9-88ed-5944d1962f5e"
     private static let betaHeader = "oauth-2025-04-20"
+    private static let decoder = JSONDecoder()
 
     private let session: URLSession
 
@@ -149,7 +150,7 @@ final class AnthropicOAuthClient: @unchecked Sendable {
             let expires_at: Int64? // milliseconds
             let scope: String?
         }
-        let decoded = try JSONDecoder().decode(TokenResponse.self, from: data)
+        let decoded = try Self.decoder.decode(TokenResponse.self, from: data)
 
         let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
         let expiresAt: Int64
@@ -195,7 +196,7 @@ final class AnthropicOAuthClient: @unchecked Sendable {
         guard (200..<300).contains(http.statusCode) else {
             throw OAuthError.httpError(http.statusCode)
         }
-        return try JSONDecoder().decode(T.self, from: data)
+        return try Self.decoder.decode(T.self, from: data)
     }
 
     // MARK: - Keychain
@@ -223,7 +224,7 @@ final class AnthropicOAuthClient: @unchecked Sendable {
             let claudeAiOauth: OAuthCredentials
         }
         do {
-            return try JSONDecoder().decode(Wrapper.self, from: data).claudeAiOauth
+            return try Self.decoder.decode(Wrapper.self, from: data).claudeAiOauth
         } catch {
             // Credentials blob present but doesn't match our expected shape.
             // Likely a format change in Claude Code CLI; treat as "can't use"

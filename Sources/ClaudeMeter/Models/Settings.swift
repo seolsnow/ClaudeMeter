@@ -1,6 +1,9 @@
 import Foundation
 import Observation
 import ServiceManagement
+import os
+
+private let log = Logger(subsystem: "com.devsisters.claudemeter", category: "Settings")
 
 @Observable
 final class Settings {
@@ -17,7 +20,7 @@ final class Settings {
                 try SMAppService.mainApp.unregister()
             }
         } catch {
-            print("[Settings] launchAtLogin toggle failed: \(error)")
+            log.error("launchAtLogin toggle failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
