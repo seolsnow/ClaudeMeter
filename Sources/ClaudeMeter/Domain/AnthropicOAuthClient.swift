@@ -55,8 +55,9 @@ struct OAuthUsageResponse: Codable {
 }
 
 enum OAuthError: Error, Equatable {
-    case missingCredentials
-    case keychainAccessDenied
+    case missingCredentials      // Keychain item doesn't exist (Claude Code not set up)
+    case keychainAccessDenied    // Keychain item exists but can't be read/parsed
+    case authRevoked             // Server returned 401/403 for a Bearer call
     case refreshFailed(Int)
     case httpError(Int)
 }
@@ -83,6 +84,10 @@ final class AnthropicOAuthClient: @unchecked Sendable {
         let config = URLSessionConfiguration.default
         config.requestCachePolicy = .reloadIgnoringLocalCacheData
         config.urlCache = nil
+        // Cap at 15s so a hung request can't overlap with the next 60s tick.
+        // URLSession's default (60s) would leave the prior request alive when
+        // the timer fires again, doubling in-flight load against /oauth/usage.
+        config.timeoutIntervalForRequest = 15
         self.session = URLSession(configuration: config)
     }
 
@@ -101,15 +106,14 @@ final class AnthropicOAuthClient: @unchecked Sendable {
     // MARK: - Token management
 
     private func validAccessToken() async throws -> String {
-        var creds: OAuthCredentials? = lock.withLock { cachedCreds }
-
-        if creds == nil {
-            creds = Self.loadCredentials()
-            guard let c = creds else { throw OAuthError.missingCredentials }
-            lock.withLock { cachedCreds = c }
+        var current: OAuthCredentials
+        if let cached = lock.withLock({ cachedCreds }) {
+            current = cached
+        } else {
+            current = try Self.loadCredentials()
+            lock.withLock { cachedCreds = current }
         }
 
-        var current = creds!
         let nowMs = Int64(Date().timeIntervalSince1970 * 1000)
         if current.expiresAt - nowMs < 60_000 {
             current = try await refresh(current)
@@ -181,7 +185,12 @@ final class AnthropicOAuthClient: @unchecked Sendable {
             throw OAuthError.httpError(-1)
         }
         if http.statusCode == 401 || http.statusCode == 403 {
-            throw OAuthError.missingCredentials
+            // Token was accepted syntactically but server rejected it —
+            // revoked, expired beyond refresh, or scope stripped. Drop the
+            // in-memory copy so the next call re-reads Keychain (where the
+            // Claude Code CLI may have stored fresh credentials).
+            lock.withLock { cachedCreds = nil }
+            throw OAuthError.authRevoked
         }
         guard (200..<300).contains(http.statusCode) else {
             throw OAuthError.httpError(http.statusCode)
@@ -191,7 +200,7 @@ final class AnthropicOAuthClient: @unchecked Sendable {
 
     // MARK: - Keychain
 
-    static func loadCredentials() -> OAuthCredentials? {
+    static func loadCredentials() throws -> OAuthCredentials {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -200,12 +209,27 @@ final class AnthropicOAuthClient: @unchecked Sendable {
         ]
         var item: CFTypeRef?
         let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status == errSecSuccess, let data = item as? Data else { return nil }
+        if status == errSecItemNotFound {
+            throw OAuthError.missingCredentials
+        }
+        guard status == errSecSuccess, let data = item as? Data else {
+            // Keychain found something but we couldn't read it — typically
+            // errSecAuthFailed / errSecInteractionNotAllowed (the user
+            // dismissed the consent prompt on ad-hoc-signed builds).
+            throw OAuthError.keychainAccessDenied
+        }
 
         struct Wrapper: Codable {
             let claudeAiOauth: OAuthCredentials
         }
-        return try? JSONDecoder().decode(Wrapper.self, from: data).claudeAiOauth
+        do {
+            return try JSONDecoder().decode(Wrapper.self, from: data).claudeAiOauth
+        } catch {
+            // Credentials blob present but doesn't match our expected shape.
+            // Likely a format change in Claude Code CLI; treat as "can't use"
+            // rather than "not installed" so the UI tells the user to update.
+            throw OAuthError.keychainAccessDenied
+        }
     }
 
 }

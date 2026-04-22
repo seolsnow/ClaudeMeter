@@ -47,19 +47,36 @@ struct DetailPanelView: View {
     // MARK: - Sections
 
     private var setupSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Claude Code not detected")
+        let (headline, body) = setupCopy(for: store.setupReason)
+        return VStack(alignment: .leading, spacing: 8) {
+            Text(headline)
                 .font(.headline)
-            Text("ClaudeMeter reads usage from the Claude Code CLI's Keychain credentials.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Text("Install Claude Code and run `claude` once to sign in, then click Retry.")
+            Text(body)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             Button("Retry") { Task { await store.refresh() } }
                 .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private func setupCopy(for reason: SetupReason?) -> (String, String) {
+        switch reason {
+        case .accessDenied:
+            return (
+                "Can't read Claude Code credentials",
+                "ClaudeMeter found a Keychain entry but couldn't access it. If macOS asked for permission, make sure you allowed it. If the Claude Code CLI updated recently, re-run `claude` to refresh credentials."
+            )
+        case .authRevoked:
+            return (
+                "Claude Code session expired",
+                "Your stored credentials were rejected by Anthropic. Open a terminal and run `claude` to sign in again, then click Retry."
+            )
+        case .notDetected, .none:
+            return (
+                "Claude Code not detected",
+                "ClaudeMeter reads usage from the Claude Code CLI's Keychain credentials. Install Claude Code and run `claude` once to sign in, then click Retry."
+            )
         }
     }
 
