@@ -1,5 +1,8 @@
 import Foundation
 import Security
+import os
+
+private let log = Logger(subsystem: "com.devsisters.claudemeter", category: "OAuth")
 
 struct OAuthCredentials: Codable {
     var accessToken: String
@@ -181,21 +184,41 @@ final class AnthropicOAuthClient: @unchecked Sendable {
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         req.setValue(Self.betaHeader, forHTTPHeaderField: "anthropic-beta")
 
-        let (data, response) = try await session.data(for: req)
+        let startedAt = Date()
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: req)
+        } catch {
+            let ms = Int(Date().timeIntervalSince(startedAt) * 1000)
+            log.error("GET \(path, privacy: .public) failed in \(ms)ms: \(error.localizedDescription, privacy: .public)")
+            throw error
+        }
+        let ms = Int(Date().timeIntervalSince(startedAt) * 1000)
         guard let http = response as? HTTPURLResponse else {
+            log.error("GET \(path, privacy: .public) non-HTTP response in \(ms)ms")
             throw OAuthError.httpError(-1)
         }
-        if http.statusCode == 401 || http.statusCode == 403 {
+        let status = http.statusCode
+        if status == 429 {
+            let retryAfter = http.value(forHTTPHeaderField: "Retry-After") ?? "none"
+            log.notice("GET \(path, privacy: .public) 429 in \(ms)ms, retry-after=\(retryAfter, privacy: .public)")
+            throw OAuthError.httpError(429)
+        }
+        if status == 401 || status == 403 {
             // Token was accepted syntactically but server rejected it —
             // revoked, expired beyond refresh, or scope stripped. Drop the
             // in-memory copy so the next call re-reads Keychain (where the
             // Claude Code CLI may have stored fresh credentials).
             lock.withLock { cachedCreds = nil }
+            log.error("GET \(path, privacy: .public) \(status) in \(ms)ms — auth revoked")
             throw OAuthError.authRevoked
         }
-        guard (200..<300).contains(http.statusCode) else {
-            throw OAuthError.httpError(http.statusCode)
+        guard (200..<300).contains(status) else {
+            log.error("GET \(path, privacy: .public) \(status) in \(ms)ms")
+            throw OAuthError.httpError(status)
         }
+        log.info("GET \(path, privacy: .public) 200 in \(ms)ms")
         return try Self.decoder.decode(T.self, from: data)
     }
 
