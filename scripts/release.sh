@@ -37,6 +37,11 @@ echo "==> Updating Homebrew tap..."
 TAP_DIR="${TMPDIR_RELEASE}/homebrew-tap"
 gh repo clone "${TAP_REPO}" "${TAP_DIR}" -- -q
 
+# Pin author identity locally so clones on machines with a different global
+# git config don't commit as e.g. `Jisoo Oh <didoo@Didoorumi.local>`.
+git -C "${TAP_DIR}" config user.name "seolsnow"
+git -C "${TAP_DIR}" config user.email "hanseolization@gmail.com"
+
 cat > "${TAP_DIR}/Casks/claudemeter.rb" <<CASK
 cask "claudemeter" do
   version "${VERSION}"

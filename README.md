@@ -121,23 +121,32 @@ These are metadata-only endpoints — **no model tokens are consumed**. The resp
 
 ## Known Limitations
 
-- **Requires Claude Code CLI to be installed and signed in.** ClaudeMeter intentionally does not implement its own login flow; it piggybacks on the CLI's credentials. If you have not used `claude login` on this Mac, the app will show "Not logged in".
+- **Requires Claude Code CLI to be installed and signed in.** ClaudeMeter intentionally does not implement its own login flow; it piggybacks on the CLI's credentials. If you have not used `claude` on this Mac, the app will show "Claude Code not detected".
 - **Repeated Keychain prompts on ad-hoc-signed builds.** Because the release `.app` is ad-hoc signed, macOS may re-prompt for Keychain access on every refresh. Click **Always Allow** once; if prompts keep appearing, this is a known cdhash-pinning limitation that is resolved by signing with an Apple Developer certificate (not yet set up for this project).
 
 ## Troubleshooting
 
-**Widget shows "Not logged in"**
+**Widget shows "Claude Code not detected"**
 - Open a terminal and confirm `claude` is installed and that `claude` commands work without prompting for login
 - If you just installed the CLI, run any Claude Code command once to trigger the initial Keychain write
-- Quit and relaunch ClaudeMeter after signing in
+- Click **Retry** in the panel after signing in
+
+**Widget shows "Can't read Claude Code credentials"**
+- macOS blocked Keychain access. If a prompt appeared, click **Always Allow**
+- If the Claude Code CLI updated recently, run `claude` again in a terminal to refresh credentials, then click **Retry**
+
+**Widget shows "Claude Code session expired"**
+- Your stored credentials were rejected. Open a terminal and run `claude` to sign in again, then click **Retry**
 
 **Keychain prompt appears every 60 seconds**
 - Click **Always Allow** in the dialog
 - If it still re-prompts, see "Known Limitations" above — this is a signing limitation
 
+**Widget shows "Refresh delayed · updated Nm ago"**
+- ClaudeMeter's last refresh hit a transient issue (usually a temporary 429 from the API). It keeps retrying every 60s — the banner clears automatically once a refresh succeeds.
+
 **Widget stuck at 0% / stale values**
-- Click the widget → **Refresh**
-- If the error persists, the token may have expired; running any `claude` command in your terminal will refresh it
+- The token may have expired; running any `claude` command in your terminal will refresh it
 
 ## Tech Stack
 
